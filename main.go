@@ -21,7 +21,7 @@ var users []User
 func GetUsersController(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"messages": "success get all users",
-		"users": []string{},
+		"users": users,
 	})
 }
 
