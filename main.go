@@ -25,9 +25,30 @@ func GetUsersController(c echo.Context) error {
 	})
 }
 
+// CreateUserController create new user by given form data
+func CreateUserController(c echo.Context) error {
+	// binding data
+	user := User{}
+	c.Bind(&user)
+
+	if len(users) == 0 {
+		user.ID = 1
+	} else {
+		newID := users[len(users) - 1].ID + 1
+		user.ID = newID
+	}
+
+	users = append(users, user)
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message"	:	"success create user",
+		"user"		:	user,
+	})
+}
+
 func main() {
 	e := echo.New()
 	e.GET("/users", GetUsersController)
+	e.POST("/users", CreateUserController)
 
 	e.Logger.Fatal(e.Start(":8000"))
 }
