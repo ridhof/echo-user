@@ -16,13 +16,19 @@ type User struct {
 	Password	string	`json:"password" form:"password"`
 }
 
-var users []User
+var users = map[int]User{}
+var idPointer int //unexported
 
 // GetUsersController get all users
 func GetUsersController(c echo.Context) error {
+	usersSlice := []User{}
+	for _, user := range users {
+		usersSlice = append(usersSlice, user)
+	}
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"messages": "success get all users",
-		"users": users,
+		"users": usersSlice,
 	})
 }
 
@@ -35,14 +41,13 @@ func GetUserController(c echo.Context) error {
 		})
 	}
 
-	for _, user := range users {
-		if user.ID == id {
-			return c.JSON(http.StatusOK, map[string]interface{}{
-				"message"	: "success to get user data by given ID",
-				"user"		: user,
-			})
-		}
-	}
+	user, isExist := users[id]
+	if isExist {
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"message"	: "success to get user data by given ID",
+			"user"		: user,
+		})
+	} 
 
 	return c.JSON(http.StatusBadRequest, map[string]interface{}{
 		"message": "user with ID " + c.Param("id") + " is not found.",
@@ -55,14 +60,10 @@ func CreateUserController(c echo.Context) error {
 	user := User{}
 	c.Bind(&user)
 
-	if len(users) == 0 {
-		user.ID = 1
-	} else {
-		newID := users[len(users) - 1].ID + 1
-		user.ID = newID
-	}
+	user.ID = idPointer + 1
+	idPointer++
 
-	users = append(users, user)
+	users[user.ID] = user
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"message"	:	"success create user",
 		"user"		:	user,
