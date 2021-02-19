@@ -88,6 +88,33 @@ func DeleteUserController(c echo.Context) error {
 	})
 }
 
+// UpdateUserController update a user by given user ID and its form data
+func UpdateUserController(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]interface{}{
+			"message": "failed to get a user, user with ID " + c.Param("id") + " is not found",
+		})
+	}
+
+	user, isExist := users[id]
+	if isExist {
+		newUser := User{}
+		c.Bind(&newUser)
+		newUser.ID = user.ID
+
+		users[newUser.ID] = newUser
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"message"	: "success update a user",
+			"user"		: users[newUser.ID],
+		})
+	}
+
+	return c.JSON(http.StatusBadRequest, map[string]interface{}{
+		"message": "user with ID " + c.Param("id") + " is not found.",
+	})
+}
+
 // CreateUserController create new user by given form data
 func CreateUserController(c echo.Context) error {
 	// binding data
@@ -110,6 +137,7 @@ func main() {
 	e.GET("/users/:id", GetUserController)
 	e.POST("/users", CreateUserController)
 	e.DELETE("/users/:id", DeleteUserController)
+	e.PUT("/users/:id", UpdateUserController)
 
 	e.Logger.Fatal(e.Start(":8000"))
 }
