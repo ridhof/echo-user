@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -22,6 +23,29 @@ func GetUsersController(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"messages": "success get all users",
 		"users": users,
+	})
+}
+
+// GetUserController get a user by given user ID
+func GetUserController(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]interface{}{
+			"message": "failed to get a user, user with ID " + c.Param("id") + " is not found",
+		})
+	}
+
+	for _, user := range users {
+		if user.ID == id {
+			return c.JSON(http.StatusOK, map[string]interface{}{
+				"message"	: "success to get user data by given ID",
+				"user"		: user,
+			})
+		}
+	}
+
+	return c.JSON(http.StatusBadRequest, map[string]interface{}{
+		"message": "user with ID " + c.Param("id") + " is not found.",
 	})
 }
 
@@ -48,6 +72,7 @@ func CreateUserController(c echo.Context) error {
 func main() {
 	e := echo.New()
 	e.GET("/users", GetUsersController)
+	e.GET("/users/:id", GetUserController)
 	e.POST("/users", CreateUserController)
 
 	e.Logger.Fatal(e.Start(":8000"))
