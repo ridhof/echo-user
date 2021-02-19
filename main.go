@@ -30,10 +30,7 @@ func mapToSlice(usersMap map[int]User) (slice []User) {
 
 // GetUsersController get all users
 func GetUsersController(c echo.Context) error {
-	usersSlice := []User{}
-	for _, user := range users {
-		usersSlice = append(usersSlice, user)
-	}
+	usersSlice := mapToSlice(users)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"messages": "success get all users",
