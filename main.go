@@ -5,12 +5,14 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo"
+	"gorm.io/gorm"
+	"gorm.io/driver/mysql"
 )
 
 // User struct contains User object with attribute 
 // such as ID, Name, Email, and Password
 type User struct {
-	ID				int			`json:"id" form:"id"`
+	gorm.Model
 	Name			string	`json:"name" form:"name"`
 	Email			string	`json:"email" form:"email"`
 	Password	string	`json:"password" form:"password"`
@@ -71,10 +73,10 @@ func DeleteUserController(c echo.Context) error {
 
 	user, isExist := users[id]
 	if isExist {
-		if user.ID == idPointer {
+		if user.ID == uint(idPointer) {
 			idPointer--
 		}
-		delete(users, user.ID)
+		delete(users, int(user.ID))
 
 		usersSlice := mapToSlice(users)
 		return c.JSON(http.StatusOK, map[string]interface{}{
@@ -103,10 +105,10 @@ func UpdateUserController(c echo.Context) error {
 		c.Bind(&newUser)
 		newUser.ID = user.ID
 
-		users[newUser.ID] = newUser
+		users[int(newUser.ID)] = newUser
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"message"	: "success update a user",
-			"user"		: users[newUser.ID],
+			"user"		: users[int(newUser.ID)],
 		})
 	}
 
@@ -121,10 +123,10 @@ func CreateUserController(c echo.Context) error {
 	user := User{}
 	c.Bind(&user)
 
-	user.ID = idPointer + 1
+	user.ID = uint(idPointer) + 1
 	idPointer++
 
-	users[user.ID] = user
+	users[int(user.ID)] = user
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"message"	:	"success create user",
 		"user"		:	user,
@@ -132,6 +134,14 @@ func CreateUserController(c echo.Context) error {
 }
 
 func main() {
+	dsn := "root:mysql@tcp(127.0.0.1:3306)/echo_user"
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+
+	db.AutoMigrate(&User{})
+
 	e := echo.New()
 	e.GET("/users", GetUsersController)
 	e.GET("/users/:id", GetUserController)
