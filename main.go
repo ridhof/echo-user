@@ -9,6 +9,9 @@ import (
 	"gorm.io/driver/mysql"
 )
 
+// DB shared gorm.DB object accross the code to use
+var DB *gorm.DB
+
 // User struct contains User object with attribute 
 // such as ID, Name, Email, and Password
 type User struct {
@@ -32,11 +35,11 @@ func mapToSlice(usersMap map[int]User) (slice []User) {
 
 // GetUsersController get all users
 func GetUsersController(c echo.Context) error {
-	usersSlice := mapToSlice(users)
-
+	var usersDB []User
+	DB.Find(&usersDB)
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"messages": "success get all users",
-		"users": usersSlice,
+		"users": usersDB,
 	})
 }
 
@@ -133,14 +136,26 @@ func CreateUserController(c echo.Context) error {
 	})
 }
 
-func main() {
+// InitDB to initialize database connection
+func InitDB() {
 	dsn := "root:mysql@tcp(127.0.0.1:3306)/echo_user"
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
 
-	db.AutoMigrate(&User{})
+	var err error
+	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+
+	if err != nil {
+		panic(err)
+	}
+}
+
+// InitialMigration to initialize database migration
+func InitialMigration() {
+	DB.AutoMigrate(&User{})
+}
+
+func main() {
+	InitDB()
+	InitialMigration()
 
 	e := echo.New()
 	e.GET("/users", GetUsersController)
