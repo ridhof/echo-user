@@ -36,7 +36,12 @@ func mapToSlice(usersMap map[int]User) (slice []User) {
 // GetUsersController get all users
 func GetUsersController(c echo.Context) error {
 	var usersDB []User
-	DB.Find(&usersDB)
+	if err := DB.Find(&usersDB).Error; err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"message": err.Error(),
+		})
+	}
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"messages": "success get all users",
 		"users": usersDB,
@@ -58,7 +63,6 @@ func GetUserController(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"message": err.Error(),
 		})
-		// return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
