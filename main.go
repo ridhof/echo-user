@@ -79,7 +79,14 @@ func DeleteUserController(c echo.Context) error {
 		})
 	}
 
-	if err := DB.Delete(&User{}, id).Error; err != nil {
+	var user User
+	if err := DB.First(&user, id).Error; err != nil {
+		return c.JSON(http.StatusNotFound, map[string]interface{}{
+			"message": err.Error(),
+		})
+	}
+
+	if err := DB.Delete(&User{}, user.ID).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"message": err.Error(),
 		})
