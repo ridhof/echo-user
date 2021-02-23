@@ -36,7 +36,12 @@ func mapToSlice(usersMap map[int]User) (slice []User) {
 // GetUsersController get all users
 func GetUsersController(c echo.Context) error {
 	var usersDB []User
-	DB.Find(&usersDB)
+	if err := DB.Find(&usersDB).Error; err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"message": err.Error(),
+		})
+	}
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"messages": "success get all users",
 		"users": usersDB,
@@ -47,21 +52,22 @@ func GetUsersController(c echo.Context) error {
 func GetUserController(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]interface{}{
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"message": "failed to get a user, user with ID " + c.Param("id") + " is not found",
 		})
 	}
 
-	user, isExist := users[id]
-	if isExist {
-		return c.JSON(http.StatusOK, map[string]interface{}{
-			"message"	: "success to get user data by given ID",
-			"user"		: user,
+	// user, isExist := users[id]
+	var user User
+	if err := DB.First(&user, id).Error; err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"message": err.Error(),
 		})
-	} 
+	}
 
-	return c.JSON(http.StatusBadRequest, map[string]interface{}{
-		"message": "user with ID " + c.Param("id") + " is not found.",
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message"	: "success to get user data by given ID",
+		"user"		: user,
 	})
 }
 
@@ -138,7 +144,7 @@ func CreateUserController(c echo.Context) error {
 
 // InitDB to initialize database connection
 func InitDB() {
-	dsn := "root:mysql@tcp(127.0.0.1:3306)/echo_user"
+	dsn := "root:mysql@tcp(127.0.0.1:3306)/echo_user?parseTime=True"
 
 	var err error
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
