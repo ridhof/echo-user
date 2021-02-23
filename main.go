@@ -80,22 +80,14 @@ func DeleteUserController(c echo.Context) error {
 		})
 	}
 
-	user, isExist := users[id]
-	if isExist {
-		if user.ID == uint(idPointer) {
-			idPointer--
-		}
-		delete(users, int(user.ID))
-
-		usersSlice := mapToSlice(users)
-		return c.JSON(http.StatusOK, map[string]interface{}{
-			"message"	: "success delete a user",
-			"users"		:	usersSlice,
+	if err := DB.Delete(&User{}, id).Error; err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"message": err.Error(),
 		})
 	}
 
-	return c.JSON(http.StatusBadRequest, map[string]interface{}{
-		"message": "user with ID " + c.Param("id") + " is not found.",
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message": "success delete a user",
 	})
 }
 
