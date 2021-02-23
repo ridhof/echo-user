@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"net/http"
 
@@ -19,18 +20,6 @@ type User struct {
 	Name			string	`json:"name" form:"name"`
 	Email			string	`json:"email" form:"email"`
 	Password	string	`json:"password" form:"password"`
-}
-
-var users = map[int]User{}
-var idPointer int //unexported
-
-func mapToSlice(usersMap map[int]User) (slice []User) {
-	slice = []User{}
-	for _, user := range users {
-		slice = append(slice, user)
-	}
-
-	return
 }
 
 // GetUsersController get all users
@@ -57,7 +46,6 @@ func GetUserController(c echo.Context) error {
 		})
 	}
 
-	// user, isExist := users[id]
 	var user User
 	if err := DB.First(&user, id).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -80,7 +68,14 @@ func DeleteUserController(c echo.Context) error {
 		})
 	}
 
-	if err := DB.Delete(&User{}, id).Error; err != nil {
+	var user User
+	if err := DB.First(&user, id).Error; err != nil {
+		return c.JSON(http.StatusNotFound, map[string]interface{}{
+			"message": err.Error(),
+		})
+	}
+
+	if err := DB.Delete(&User{}, user.ID).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"message": err.Error(),
 		})
@@ -100,21 +95,27 @@ func UpdateUserController(c echo.Context) error {
 		})
 	}
 
-	user, isExist := users[id]
-	if isExist {
-		newUser := User{}
-		c.Bind(&newUser)
-		newUser.ID = user.ID
-
-		users[int(newUser.ID)] = newUser
-		return c.JSON(http.StatusOK, map[string]interface{}{
-			"message"	: "success update a user",
-			"user"		: users[int(newUser.ID)],
+	var user User
+	if err := DB.First(&user, id).Error; err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"message": err.Error(),
 		})
 	}
 
-	return c.JSON(http.StatusBadRequest, map[string]interface{}{
-		"message": "user with ID " + c.Param("id") + " is not found.",
+	var updateUser User
+	c.Bind(&updateUser)
+
+	user.Name = updateUser.Name
+	user.Email = updateUser.Email
+	if err := DB.Save(&user).Error; err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"message": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message": "success update a user",
+		"user" : user,
 	})
 }
 
@@ -136,7 +137,20 @@ func CreateUserController(c echo.Context) error {
 
 // InitDB to initialize database connection
 func InitDB() {
-	dsn := "root:mysql@tcp(127.0.0.1:3306)/echo_user?parseTime=True"
+	dbUsername := "root"
+	dbPassword := "mysql"
+	dbAddress := "127.0.0.1"
+	dbPort := "3306"
+	dbName := "echo_user"
+
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%s)/%s?parseTime=True",
+		dbUsername,
+		dbPassword,
+		dbAddress,
+		dbPort,
+		dbName,
+	)
 
 	var err error
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
