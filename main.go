@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"net/http"
 
@@ -19,18 +20,6 @@ type User struct {
 	Name			string	`json:"name" form:"name"`
 	Email			string	`json:"email" form:"email"`
 	Password	string	`json:"password" form:"password"`
-}
-
-var users = map[int]User{}
-var idPointer int //unexported
-
-func mapToSlice(usersMap map[int]User) (slice []User) {
-	slice = []User{}
-	for _, user := range users {
-		slice = append(slice, user)
-	}
-
-	return
 }
 
 // GetUsersController get all users
@@ -148,7 +137,20 @@ func CreateUserController(c echo.Context) error {
 
 // InitDB to initialize database connection
 func InitDB() {
-	dsn := "root:mysql@tcp(127.0.0.1:3306)/echo_user?parseTime=True"
+	dbUsername := "root"
+	dbPassword := "mysql"
+	dbAddress := "127.0.0.1"
+	dbPort := "3306"
+	dbName := "echo_user"
+
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%s)/%s?parseTime=True",
+		dbUsername,
+		dbPassword,
+		dbAddress,
+		dbPort,
+		dbName,
+	)
 
 	var err error
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
