@@ -5,6 +5,9 @@ import (
 	"strconv"
 	"net/http"
 
+	"echo-user/config"
+	"echo-user/models"
+
 	"github.com/labstack/echo"
 	"gorm.io/gorm"
 	"gorm.io/driver/mysql"
@@ -13,19 +16,10 @@ import (
 // DB shared gorm.DB object accross the code to use
 var DB *gorm.DB
 
-// User struct contains User object with attribute 
-// such as ID, Name, Email, and Password
-type User struct {
-	gorm.Model
-	Name			string	`json:"name" form:"name"`
-	Email			string	`json:"email" form:"email"`
-	Password	string	`json:"password" form:"password"`
-}
-
 // GetUsersController get all users
 func GetUsersController(c echo.Context) error {
-	var usersDB []User
-	if err := DB.Find(&usersDB).Error; err != nil {
+	var usersDB []models.User
+	if err := config.DB.Find(&usersDB).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"message": err.Error(),
 		})
@@ -46,8 +40,8 @@ func GetUserController(c echo.Context) error {
 		})
 	}
 
-	var user User
-	if err := DB.First(&user, id).Error; err != nil {
+	var user models.User
+	if err := config.DB.First(&user, id).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"message": err.Error(),
 		})
@@ -68,14 +62,14 @@ func DeleteUserController(c echo.Context) error {
 		})
 	}
 
-	var user User
-	if err := DB.First(&user, id).Error; err != nil {
+	var user models.User
+	if err := config.DB.First(&user, id).Error; err != nil {
 		return c.JSON(http.StatusNotFound, map[string]interface{}{
 			"message": err.Error(),
 		})
 	}
 
-	if err := DB.Delete(&User{}, user.ID).Error; err != nil {
+	if err := config.DB.Delete(&models.User{}, user.ID).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"message": err.Error(),
 		})
@@ -95,19 +89,19 @@ func UpdateUserController(c echo.Context) error {
 		})
 	}
 
-	var user User
-	if err := DB.First(&user, id).Error; err != nil {
+	var user models.User
+	if err := config.DB.First(&user, id).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"message": err.Error(),
 		})
 	}
 
-	var updateUser User
+	var updateUser models.User
 	c.Bind(&updateUser)
 
 	user.Name = updateUser.Name
 	user.Email = updateUser.Email
-	if err := DB.Save(&user).Error; err != nil {
+	if err := config.DB.Save(&user).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"message": err.Error(),
 		})
@@ -122,10 +116,10 @@ func UpdateUserController(c echo.Context) error {
 // CreateUserController create new user by given form data
 func CreateUserController(c echo.Context) error {
 	// binding data
-	user := User{}
+	user := models.User{}
 	c.Bind(&user)
 
-	if err := DB.Create(&user).Error; err != nil {
+	if err := config.DB.Create(&user).Error; err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	
@@ -160,14 +154,8 @@ func InitDB() {
 	}
 }
 
-// InitialMigration to initialize database migration
-func InitialMigration() {
-	DB.AutoMigrate(&User{})
-}
-
 func main() {
-	InitDB()
-	InitialMigration()
+	config.InitDB()
 
 	e := echo.New()
 	e.GET("/users", GetUsersController)
