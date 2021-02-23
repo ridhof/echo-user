@@ -57,7 +57,6 @@ func GetUserController(c echo.Context) error {
 		})
 	}
 
-	// user, isExist := users[id]
 	var user User
 	if err := DB.First(&user, id).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -100,21 +99,27 @@ func UpdateUserController(c echo.Context) error {
 		})
 	}
 
-	user, isExist := users[id]
-	if isExist {
-		newUser := User{}
-		c.Bind(&newUser)
-		newUser.ID = user.ID
-
-		users[int(newUser.ID)] = newUser
-		return c.JSON(http.StatusOK, map[string]interface{}{
-			"message"	: "success update a user",
-			"user"		: users[int(newUser.ID)],
+	var user User
+	if err := DB.First(&user, id).Error; err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"message": err.Error(),
 		})
 	}
 
-	return c.JSON(http.StatusBadRequest, map[string]interface{}{
-		"message": "user with ID " + c.Param("id") + " is not found.",
+	var updateUser User
+	c.Bind(&updateUser)
+
+	user.Name = updateUser.Name
+	user.Email = updateUser.Email
+	if err := DB.Save(&user).Error; err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"message": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message": "success update a user",
+		"user" : user,
 	})
 }
 
