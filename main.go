@@ -126,10 +126,10 @@ func CreateUserController(c echo.Context) error {
 	user := User{}
 	c.Bind(&user)
 
-	user.ID = uint(idPointer) + 1
-	idPointer++
-
-	users[int(user.ID)] = user
+	if err := DB.Create(&user).Error; err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"message"	:	"success create user",
 		"user"		:	user,
