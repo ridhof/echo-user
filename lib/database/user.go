@@ -2,6 +2,7 @@ package database
 
 import (
 	"echo-user/config"
+	"echo-user/middlewares"
 	"echo-user/models"
 )
 
@@ -59,5 +60,16 @@ func CreateUser(user *models.User) (interface{}, error) {
 	if err := config.DB.Create(user).Error; err != nil {
 		return nil, err
 	}
+
+	var err error
+	user.Token, err = middlewares.CreateToken(int(user.ID))
+	if err != nil {
+		return nil, err
+	} 
+
+	if err := config.DB.Save(user).Error; err != nil {
+		return nil, err
+	}
+
 	return user, nil
 }
