@@ -54,7 +54,7 @@ func DeleteUserController(c echo.Context) error {
 	}
 
 	// var user models.User
-	if _, deleteErr := database.DeleteUser(id); err != nil {
+	if _, deleteErr := database.DeleteUser(id); deleteErr != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, deleteErr.Error())
 	} 
 
