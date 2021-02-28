@@ -1,0 +1,15 @@
+---
+application:
+  name: "echo-user"
+  project: "echo-user-076"
+  organization: "QoveryCommunity"
+databases:
+- type: "POSTGRESQL"
+  name: "echouser"
+  version: "11"
+routers:
+- name: "main-echo-user"
+  routes:
+  - application_name: "echo-user"
+    paths:
+    - "/*"
