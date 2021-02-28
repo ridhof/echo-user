@@ -1,13 +1,15 @@
 package main
 
 import (
-	"strconv"
+	"fmt"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/labstack/echo"
 )
 
-// User struct contains User object with attribute 
+// User struct contains User object with attribute
 // such as ID, Name, Email, and Password
 type User struct {
 	ID				int			`json:"id" form:"id"`
@@ -139,5 +141,5 @@ func main() {
 	e.DELETE("/users/:id", DeleteUserController)
 	e.PUT("/users/:id", UpdateUserController)
 
-	e.Logger.Fatal(e.Start(":8000"))
+	e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", os.Getenv("PORT"))))
 }
