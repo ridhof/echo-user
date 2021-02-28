@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/labstack/echo"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/driver/mysql"
 )
 
 // DB shared gorm.DB object accross the code to use
@@ -151,9 +152,12 @@ func InitDB() {
 		dbPort,
 		dbName,
 	)
+	if os.Getenv("DATABASE_URL") != "" {
+		dsn = os.Getenv("DATABASE_URL")
+	}
 
 	var err error
-	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
 		panic(err)
@@ -176,5 +180,5 @@ func main() {
 	e.DELETE("/users/:id", DeleteUserController)
 	e.PUT("/users/:id", UpdateUserController)
 
-	e.Logger.Fatal(e.Start(":8000"))
+	e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", os.Getenv("PORT"))))
 }
