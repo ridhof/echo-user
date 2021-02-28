@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/labstack/echo"
+	"github.com/gin-gonic/gin"
 )
 
 // User struct contains User object with attribute
@@ -31,44 +31,47 @@ func mapToSlice(usersMap map[int]User) (slice []User) {
 }
 
 // GetUsersController get all users
-func GetUsersController(c echo.Context) error {
+func GetUsersController(c *gin.Context) {
 	usersSlice := mapToSlice(users)
 
-	return c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, map[string]interface{}{
 		"messages": "success get all users",
 		"users": usersSlice,
 	})
 }
 
 // GetUserController get a user by given user ID
-func GetUserController(c echo.Context) error {
+func GetUserController(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]interface{}{
+		c.JSON(http.StatusNotFound, map[string]interface{}{
 			"message": "failed to get a user, user with ID " + c.Param("id") + " is not found",
 		})
+		return
 	}
 
 	user, isExist := users[id]
 	if isExist {
-		return c.JSON(http.StatusOK, map[string]interface{}{
+		c.JSON(http.StatusOK, map[string]interface{}{
 			"message"	: "success to get user data by given ID",
 			"user"		: user,
 		})
+		return
 	} 
 
-	return c.JSON(http.StatusBadRequest, map[string]interface{}{
+	c.JSON(http.StatusBadRequest, map[string]interface{}{
 		"message": "user with ID " + c.Param("id") + " is not found.",
 	})
 }
 
 // DeleteUserController delete a user by given user ID
-func DeleteUserController(c echo.Context) error {
+func DeleteUserController(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]interface{}{
+		c.JSON(http.StatusNotFound, map[string]interface{}{
 			"message": "failed to get a user, user with ID " + c.Param("id") + " is not found",
 		})
+		return
 	}
 
 	user, isExist := users[id]
@@ -79,24 +82,26 @@ func DeleteUserController(c echo.Context) error {
 		delete(users, user.ID)
 
 		usersSlice := mapToSlice(users)
-		return c.JSON(http.StatusOK, map[string]interface{}{
+		c.JSON(http.StatusOK, map[string]interface{}{
 			"message"	: "success delete a user",
 			"users"		:	usersSlice,
 		})
+		return
 	}
 
-	return c.JSON(http.StatusBadRequest, map[string]interface{}{
+	c.JSON(http.StatusBadRequest, map[string]interface{}{
 		"message": "user with ID " + c.Param("id") + " is not found.",
 	})
 }
 
 // UpdateUserController update a user by given user ID and its form data
-func UpdateUserController(c echo.Context) error {
+func UpdateUserController(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]interface{}{
+		c.JSON(http.StatusNotFound, map[string]interface{}{
 			"message": "failed to get a user, user with ID " + c.Param("id") + " is not found",
 		})
+		return
 	}
 
 	user, isExist := users[id]
@@ -106,19 +111,20 @@ func UpdateUserController(c echo.Context) error {
 		newUser.ID = user.ID
 
 		users[newUser.ID] = newUser
-		return c.JSON(http.StatusOK, map[string]interface{}{
+		c.JSON(http.StatusOK, map[string]interface{}{
 			"message"	: "success update a user",
 			"user"		: users[newUser.ID],
 		})
+		return
 	}
 
-	return c.JSON(http.StatusBadRequest, map[string]interface{}{
+	c.JSON(http.StatusBadRequest, map[string]interface{}{
 		"message": "user with ID " + c.Param("id") + " is not found.",
 	})
 }
 
 // CreateUserController create new user by given form data
-func CreateUserController(c echo.Context) error {
+func CreateUserController(c *gin.Context) {
 	// binding data
 	user := User{}
 	c.Bind(&user)
@@ -127,19 +133,22 @@ func CreateUserController(c echo.Context) error {
 	idPointer++
 
 	users[user.ID] = user
-	return c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, map[string]interface{}{
 		"message"	:	"success create user",
 		"user"		:	user,
 	})
 }
 
 func main() {
-	e := echo.New()
-	e.GET("/users", GetUsersController)
-	e.GET("/users/:id", GetUserController)
-	e.POST("/users", CreateUserController)
-	e.DELETE("/users/:id", DeleteUserController)
-	e.PUT("/users/:id", UpdateUserController)
+	router := gin.New()
+	router.Use(gin.Logger())
 
-	e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", os.Getenv("PORT"))))
+	router.GET("/users", GetUsersController)
+	router.GET("/users/:id", GetUserController)
+	router.POST("/users", CreateUserController)
+	router.DELETE("/users/:id", DeleteUserController)
+	router.PUT("/users/:id", UpdateUserController)
+
+	// e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", os.Getenv("PORT"))))
+	router.Run(fmt.Sprintf(":%s", os.Getenv("PORT")))
 }
